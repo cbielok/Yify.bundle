@@ -1,0 +1,89 @@
+HTTP_HEADERS = {
+	'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36',
+	'Referer': 'http://yify.tv/'
+}
+
+JSON_URL = 'http://yify.tv/reproductor2/pk/pk/plugins/player_p.php?url=%s'
+RE_PLAYER = Regex('showPkPlayer\("([^"]+)')
+
+####################################################################################################
+def NormalizeURL(url):
+
+	return url.split('#')[0].split('?')[0]
+
+####################################################################################################
+def MetadataObjectForURL(url):
+
+	html = HTML.ElementFromURL(url)
+
+	title = html.xpath('//meta[@property="og:title"]/@content')[0]
+	summary = html.xpath('//meta[@property="og:description"]/@content')[0]
+	thumb = html.xpath('//meta[@property="og:image"]/@content')[0]
+
+	try: genres = html.xpath('//meta[@itemprop="genre"]/@content')[0].split(', ')
+	except: genres = None
+
+	try: directors = html.xpath('//meta[@itemprop="director"]/@content')[0].split(', ')
+	except: directors = None
+
+	try: writers = html.xpath('//meta[@itemprop="author"]/@content')[0].split(', ')
+	except: writers = None
+
+	try: year = int(html.xpath('//a[@rel="tag" and contains(@href, "/years/")]/text()')[0])
+	except: year = None
+
+	return MovieObject(
+		title = title,
+		summary = summary,
+		thumb = Resource.ContentsOfURLWithFallback(url=thumb, fallback='icon-default.jpg'),
+		genres = genres,
+		directors = directors,
+		writers = writers,
+		year = year
+	)
+
+####################################################################################################
+def MediaObjectsForURL(url):
+
+	return [
+		MediaObject(
+			parts = [
+				PartObject(key=Callback(PlayVideo, url=url, res=resolution))
+			],
+			video_resolution = resolution,
+			container = Container.MP4,
+			video_codec = VideoCodec.H264,
+			audio_codec = AudioCodec.AAC,
+			audio_channels = 2,
+			optimized_for_streaming = True
+		) for resolution in [1080, 720, 480]
+	]
+
+####################################################################################################
+@indirect
+def PlayVideo(url, res):
+
+	data = HTTP.Request(url).content
+	video_id = RE_PLAYER.search(data)
+
+	if not video_id:
+		raise Ex.MediaNotAvailable
+
+	json_obj = JSON.ObjectFromURL(JSON_URL % video_id.group(1))
+	available_resolutions = []
+
+	for media in json_obj:
+		if media['medium'] == 'video':
+			available_resolutions.append(media['height'])
+
+	if len(available_resolutions) < 1:
+		raise Ex.MediaNotAvailable
+
+	closest = min((abs(res - i), i) for i in available_resolutions)[1]
+
+	for media in json_obj:
+		if media['height'] == closest:
+			video_url = media['url']
+			break
+
+	return IndirectResponse(VideoClipObject, key=video_url)
