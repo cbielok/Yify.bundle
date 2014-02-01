@@ -27,6 +27,8 @@ def MainMenu():
 	oc.add(DirectoryObject(key = Callback(ListMovies, title='Popular', url=POPULAR_URL), title='Popular'))
 	oc.add(DirectoryObject(key = Callback(ListMovies, title='Top +250', url=TOP250_URL), title='Top +250'))
 
+	oc.add(SearchDirectoryObject(identifier='com.plexapp.plugins.yify', title='Search', summary='Search Movies on Yify', prompt='Search for...'))
+
 	return oc
 
 ####################################################################################################
@@ -40,8 +42,10 @@ def ListMovies(title, url, page=1):
 
 		movie_url = movie.xpath('.//img/parent::a/@href')[0]
 		movie_title = movie.xpath('.//h2/text()')[0]
-		movie_summary = movie.xpath('.//h1/text()')[0].split('\n')[0].strip()
 		movie_thumb = movie.xpath('.//img/@src')[0]
+
+		try: movie_summary = movie.xpath('.//h1/text()')[0].split('\n')[0].strip()
+		except: movie_summary = None
 
 		try: year = int(movie.xpath('.//h2//a/text()')[0])
 		except: year = None

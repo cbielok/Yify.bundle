@@ -12,5 +12,13 @@
 			</array>
 		</dict>
 	</dict>
+	<key>Search</key>
+	<dict>
+		<key>Yify</key>
+		<dict>
+			<key>Identifier</key>
+			<string>com.plexapp.plugins.yify</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
