@@ -9,7 +9,7 @@ SEARCH_URL = 'http://yify.tv/?s=%s'
 def Search(query):
 
 	oc = ObjectContainer(title2='Search Results')
-	html = HTML.ElementFromURL(SEARCH_URL % String.Quote(query, usePlus=True))
+	html = HTML.ElementFromURL(SEARCH_URL % String.Quote(query, usePlus=True), headers=HTTP_HEADERS)
 
 	for movie in html.xpath('//article[@class="posts3"]'):
 
