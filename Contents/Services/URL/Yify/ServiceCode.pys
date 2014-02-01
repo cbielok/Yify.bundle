@@ -63,17 +63,17 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, res):
 
-	data = HTTP.Request(url).content
+	data = HTTP.Request(url, headers=HTTP_HEADERS).content
 	video_id = RE_PLAYER.search(data)
 
 	if not video_id:
 		raise Ex.MediaNotAvailable
 
-	json_obj = JSON.ObjectFromURL(JSON_URL % video_id.group(1))
+	json_obj = JSON.ObjectFromURL(JSON_URL % video_id.group(1), headers=HTTP_HEADERS)
 	available_resolutions = []
 
 	for media in json_obj:
-		if media['medium'] == 'video':
+		if 'type' in media and media['type'] == 'video/mpeg4':
 			available_resolutions.append(media['height'])
 
 	if len(available_resolutions) < 1:
@@ -82,7 +82,7 @@ def PlayVideo(url, res):
 	closest = min((abs(res - i), i) for i in available_resolutions)[1]
 
 	for media in json_obj:
-		if media['height'] == closest:
+		if 'type' in media and media['type'] == 'video/mpeg4' and media['height'] == closest:
 			video_url = media['url']
 			break
 
