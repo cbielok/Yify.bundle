@@ -3,6 +3,7 @@ BASE_URL = 'http://yify.tv'
 RELEASES_URL = '%s/files/releases/page/%%d/' % BASE_URL
 POPULAR_URL = '%s/popular/page/%%d/' % BASE_URL
 TOP250_URL = '%s/files/movies/page/%%d/?meta_key=imdbRating&orderby=meta_value&order=desc' % BASE_URL
+GENRE_URL = '%s/genre/%%s/page/%%%%d/' % BASE_URL
 
 ART = 'art-default.jpg'
 ICON = 'icon-default.jpg'
@@ -26,6 +27,7 @@ def MainMenu():
 	oc.add(DirectoryObject(key = Callback(ListMovies, title='Releases', url=RELEASES_URL), title='Releases'))
 	oc.add(DirectoryObject(key = Callback(ListMovies, title='Popular', url=POPULAR_URL), title='Popular'))
 	oc.add(DirectoryObject(key = Callback(ListMovies, title='Top +250', url=TOP250_URL), title='Top +250'))
+	oc.add(DirectoryObject(key = Callback(ListGenres), title='Genres'))
 
 	oc.add(SearchDirectoryObject(identifier='com.plexapp.plugins.yify', title='Search', summary='Search Movies on Yify', prompt='Search for...'))
 
@@ -63,5 +65,25 @@ def ListMovies(title, url, page=1):
 			key = Callback(ListMovies, title=title, url=url, page=page+1),
 			title = L('More...')
 		))
+
+	return oc
+
+####################################################################################################
+@route('/video/yify/listgenres')
+def ListGenres():
+
+	oc = ObjectContainer(title2='Genres')
+
+	oc.add(DirectoryObject(key = Callback(ListMovies, title='Action', url=GENRE_URL % 'action'), title='Action'))
+	oc.add(DirectoryObject(key = Callback(ListMovies, title='Animation', url=GENRE_URL % 'animation'), title='Animation'))
+	oc.add(DirectoryObject(key = Callback(ListMovies, title='Comedy', url=GENRE_URL % 'comedy'), title='Comedy'))
+	oc.add(DirectoryObject(key = Callback(ListMovies, title='Documentary', url=GENRE_URL % 'documentary'), title='Documentary'))
+	oc.add(DirectoryObject(key = Callback(ListMovies, title='Drama', url=GENRE_URL % 'drama'), title='Drama'))
+	oc.add(DirectoryObject(key = Callback(ListMovies, title='Family', url=GENRE_URL % 'family'), title='Family'))
+	oc.add(DirectoryObject(key = Callback(ListMovies, title='Horror', url=GENRE_URL % 'horror'), title='Horror'))
+	oc.add(DirectoryObject(key = Callback(ListMovies, title='Mystery', url=GENRE_URL % 'mystery'), title='Mystery'))
+	oc.add(DirectoryObject(key = Callback(ListMovies, title='Romance', url=GENRE_URL % 'romance'), title='Romance'))
+	oc.add(DirectoryObject(key = Callback(ListMovies, title='Science fiction', url=GENRE_URL % 'sci-fi'), title='Science fiction'))
+	oc.add(DirectoryObject(key = Callback(ListMovies, title='Thriller', url=GENRE_URL % 'thriller'), title='Thriller'))
 
 	return oc
