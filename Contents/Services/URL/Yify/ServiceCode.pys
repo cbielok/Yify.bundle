@@ -51,12 +51,13 @@ def MediaObjectsForURL(url):
 				PartObject(key=Callback(PlayVideo, url=url, res=resolution))
 			],
 			video_resolution = resolution,
+			bitrate = bitrate,
 			container = Container.MP4,
 			video_codec = VideoCodec.H264,
 			audio_codec = AudioCodec.AAC,
 			audio_channels = 2,
 			optimized_for_streaming = True
-		) for resolution in [1080, 720, 480]
+		) for resolution, bitrate in [(1080, 3000), (720, 1500), (480, 750)]
 	]
 
 ####################################################################################################
