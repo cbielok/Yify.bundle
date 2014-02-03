@@ -62,10 +62,14 @@ def ListMovies(title, url, page=1):
 
 	if len(html.xpath('//a[@class="nextpostslink"]')) > 0:
 
-		oc.add(NextPageObject(
-			key = Callback(ListMovies, title=title, url=url, page=page+1),
-			title = L('More...')
-		))
+		if page % 5 != 0:
+			oc.extend(ListMovies(title=title, url=url, page=page+1))
+
+		else:
+			oc.add(NextPageObject(
+				key = Callback(ListMovies, title=title, url=url, page=page+1),
+				title = L('More...')
+			))
 
 	return oc
 
