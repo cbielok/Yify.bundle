@@ -83,6 +83,9 @@ def PlayVideo(url, res):
 
 	for media in json_obj:
 		if 'type' in media and media['type'] == 'video/mpeg4' and media['height'] == closest:
+
+			Log('\n----------\nOriginating URL: %s\nChosen resolution (vertical): %s\nSelected resolution: %sx%s\nVideo URL: %s\n----------' % (url, res, media['width'], media['height'], media['url']))
+
 			video_url = media['url']
 			break
 
