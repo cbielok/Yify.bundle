@@ -28,9 +28,11 @@ def MainMenu():
 	oc.add(DirectoryObject(key = Callback(ListMovies, title='Popular', url=POPULAR_URL), title='Popular'))
 	oc.add(DirectoryObject(key = Callback(ListMovies, title='Top +250', url=TOP250_URL), title='Top +250'))
 	oc.add(DirectoryObject(key = Callback(ListGenres), title='Genres'))
+	oc.add(DirectoryObject(key = Callback(Watchlist), title='Watchlist'))
 
 	if Client.Product != 'PlexConnect':
 		oc.add(SearchDirectoryObject(identifier='com.plexapp.plugins.yify', title='Search', summary='Search Movies on Yify', prompt='Search for...'))
+		oc.add(PrefsObject(title='Preferences'))
 
 	return oc
 
@@ -92,3 +94,91 @@ def ListGenres():
 	oc.add(DirectoryObject(key = Callback(ListMovies, title='Thriller', url=GENRE_URL % 'thriller'), title='Thriller'))
 
 	return oc
+
+####################################################################################################
+@route('/video/yify/watchlist')
+def Watchlist():
+
+	if not Login():
+		return ObjectContainer(header="Login failed", message="Check your username and password")
+
+	oc = ObjectContainer(title2='Watchlist', no_cache=True)
+
+	post_values = {
+		'a': 'get_lists',
+		'ajax': '1'
+	}
+
+	cookies = HTTP.CookiesForURL(BASE_URL)
+	json_obj = JSON.ObjectFromURL(BASE_URL, values=post_values, headers={'Cookie': cookies})
+
+	for list in json_obj:
+		id = list['ID']
+		title = list['titulo']
+
+		oc.add(DirectoryObject(key = Callback(WatchlistMovies, id=id, title=title), title=title))
+
+	return oc
+
+####################################################################################################
+@route('/video/yify/watchlistmovies')
+def WatchlistMovies(id, title):
+
+	if not Login():
+		return ObjectContainer(header="Login failed", message="Check your username and password")
+
+	oc = ObjectContainer(title2=title, no_cache=True)
+
+	post_values = {
+		'listid': id,
+		'a': 'get_posts_from_list',
+		'ajax': '1'
+	}
+
+	cookies = HTTP.CookiesForURL(BASE_URL)
+	json_obj = JSON.ObjectFromURL(BASE_URL, values=post_values, headers={'Cookie': cookies})
+
+	for movie in json_obj['posts']:
+
+		movie_url = movie['link']
+		movie_title = movie['title']
+		movie_thumb = movie['image']
+
+		try: movie_summary = movie['post_content']
+		except: movie_summary = None
+
+		try: year = int(movie['year'])
+		except: year = None
+
+		oc.add(MovieObject(
+			url = movie_url,
+			title = movie_title,
+			summary = movie_summary,
+			thumb = Resource.ContentsOfURLWithFallback(url=movie_thumb, fallback='icon-default.jpg')
+		))
+
+	return oc
+
+####################################################################################################
+@route('/video/yify/login')
+def Login():
+
+	if Prefs['username'] and Prefs['password']:
+
+		HTTP.ClearCookies()
+
+		post_values = {
+			'log': Prefs['username'],
+			'pwd': Prefs['password'],
+			'a': 'login',
+			'ajax': '1'
+		}
+
+		json = HTTP.Request(BASE_URL, values=post_values).content
+		json = json.replace("'", '"')
+		json_obj = JSON.ObjectFromString(json)
+
+		if 'status' in json_obj and json_obj['status'] == 'OK':
+			return True
+
+	return False
