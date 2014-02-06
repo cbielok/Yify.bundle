@@ -5,6 +5,8 @@ POPULAR_URL = '%s/popular/page/%%d/' % BASE_URL
 TOP250_URL = '%s/files/movies/page/%%d/?meta_key=imdbRating&orderby=meta_value&order=desc' % BASE_URL
 GENRE_URL = '%s/genre/%%s/page/%%%%d/' % BASE_URL
 
+RE_POSTS = Regex('var posts = ({.+});')
+
 ART = 'art-default.jpg'
 ICON = 'icon-default.jpg'
 
@@ -41,18 +43,24 @@ def MainMenu():
 def ListMovies(title, url, page=1):
 
 	oc = ObjectContainer(title2=title)
-	html = HTML.ElementFromURL(url % page)
+	data = HTTP.Request(url % page).content
+	json = RE_POSTS.search(data)
 
-	for movie in html.xpath('//article[@class="posts3"]'):
+	if not json:
+		return oc
 
-		movie_url = movie.xpath('.//img/parent::a/@href')[0]
-		movie_title = movie.xpath('.//h2/text()')[0]
-		movie_thumb = movie.xpath('.//img/@src')[0]
+	json_obj = JSON.ObjectFromString(json.group(1))
 
-		try: movie_summary = movie.xpath('.//h1/text()')[0].split('\n')[0].strip()
+	for movie in json_obj['posts']:
+
+		movie_url = movie['link']
+		movie_title = movie['title']
+		movie_thumb = movie['image']
+
+		try: movie_summary = movie['post_content']
 		except: movie_summary = None
 
-		try: year = int(movie.xpath('.//h2//a/text()')[0])
+		try: year = int(movie['year'])
 		except: year = None
 
 		oc.add(MovieObject(
@@ -61,6 +69,8 @@ def ListMovies(title, url, page=1):
 			summary = movie_summary,
 			thumb = Resource.ContentsOfURLWithFallback(url=movie_thumb, fallback='icon-default.jpg')
 		))
+
+	html = HTML.ElementFromString(data)
 
 	if len(html.xpath('//a[@class="nextpostslink"]')) > 0:
 
