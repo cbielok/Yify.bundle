@@ -1,10 +1,12 @@
 HTTP_HEADERS = {
-	'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36',
-	'Referer': 'http://yify.tv/'
+	'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36'
 }
 
 JSON_URL = 'http://yify.tv/reproductor2/pk/pk/plugins/player_p.php?url=%s'
 RE_PLAYER = Regex('showPkPlayer\("([^"]+)')
+
+OMDB_URL = 'http://www.omdbapi.com/?i=%s'
+LANG = {'English': 'en'}
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -19,6 +21,7 @@ def MetadataObjectForURL(url):
 	title = html.xpath('//meta[@property="og:title"]/@content')[0]
 	summary = html.xpath('//meta[@property="og:description"]/@content')[0]
 	thumb = html.xpath('//meta[@property="og:image"]/@content')[0]
+	rating = None
 
 	try: genres = html.xpath('//meta[@itemprop="genre"]/@content')[0].split(', ')
 	except: genres = None
@@ -35,15 +38,34 @@ def MetadataObjectForURL(url):
 	try: duration = int(html.xpath('//meta[@itemprop="duration"]/@content')[0].strip()) * 1000
 	except: duration = None
 
+
+	imdb_id = html.xpath('//a[contains(@href, "imdb.com/title/tt")]/@href')
+
+	if len(imdb_id) > 0:
+		imdb_id = imdb_id[0].split('?')[0].split('/')[4]
+
+		try:
+			omdb_json = JSON.ObjectFromURL(OMDB_URL % imdb_id)
+
+			thumb = '%s.jpg' % omdb_json['Poster'].split('._')[0] if omdb_json['Poster'] != 'N/A' else thumb
+			rating = float(omdb_json['imdbRating']) if 'imdbRating' in omdb_json and omdb_json['imdbRating'] != 'N/A' else None
+
+			language = omdb_json['Language'].split(',')[0] if 'Language' in omdb_json and omdb_json['Language'] != 'N/A' else None
+			AudioStreamObject.language_code = LANG[language] if language in LANG else 'xx'
+
+		except:
+			pass
+
 	return MovieObject(
 		title = title,
 		summary = summary,
-		thumb = Resource.ContentsOfURLWithFallback(url=thumb, fallback='icon-default.jpg'),
 		genres = genres,
 		directors = directors,
 		writers = writers,
 		year = year,
-		duration = duration
+		duration = duration,
+		rating = rating,
+		thumb = Resource.ContentsOfURLWithFallback(url=thumb, fallback='icon-default.jpg')
 	)
 
 ####################################################################################################
@@ -74,7 +96,12 @@ def PlayVideo(url, res):
 	if not video_id:
 		raise Ex.MediaNotAvailable
 
-	json_obj = JSON.ObjectFromURL(JSON_URL % video_id.group(1), headers=HTTP_HEADERS)
+	try:
+		json_obj = JSON.ObjectFromURL(JSON_URL % video_id.group(1), headers=HTTP_HEADERS)
+	except:
+		Log('Something went wrong...')
+		raise Ex.MediaNotAvailable
+
 	available_resolutions = []
 
 	for media in json_obj:
@@ -89,9 +116,8 @@ def PlayVideo(url, res):
 	for media in json_obj:
 		if 'type' in media and media['type'] == 'video/mpeg4' and media['height'] == closest:
 
-			Log('\n----------\nOriginating URL: %s\nChosen resolution (vertical): %s\nSelected resolution: %sx%s\nVideo URL: %s\n----------' % (url, res, media['width'], media['height'], media['url']))
+			#Log('\n----------\nOriginating URL: %s\nChosen resolution (vertical): %s\nSelected resolution: %sx%s\nVideo URL: %s\n----------' % (url, res, media['width'], media['height'], media['url']))
 
-			video_url = media['url']
-			break
+			return IndirectResponse(VideoClipObject, key=media['url'])
 
-	return IndirectResponse(VideoClipObject, key=video_url)
+	raise Ex.MediaNotAvailable
