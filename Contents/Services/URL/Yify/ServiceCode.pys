@@ -32,6 +32,9 @@ def MetadataObjectForURL(url):
 	try: year = int(html.xpath('//a[@rel="tag" and contains(@href, "/years/")]/text()')[0])
 	except: year = None
 
+	try: duration = int(html.xpath('//meta[@itemprop="duration"]/@content')[0].strip()) * 1000
+	except: duration = None
+
 	return MovieObject(
 		title = title,
 		summary = summary,
@@ -39,7 +42,8 @@ def MetadataObjectForURL(url):
 		genres = genres,
 		directors = directors,
 		writers = writers,
-		year = year
+		year = year,
+		duration = duration
 	)
 
 ####################################################################################################
@@ -57,7 +61,7 @@ def MediaObjectsForURL(url):
 			audio_codec = AudioCodec.AAC,
 			audio_channels = 2,
 			optimized_for_streaming = True
-		) for resolution, bitrate in [(1080, 3000), (720, 1500), (480, 750)]
+		) for resolution, bitrate in [(720, 1500)]
 	]
 
 ####################################################################################################
