@@ -56,6 +56,9 @@ def MetadataObjectForURL(url):
 		except:
 			pass
 
+	if rating:
+		summary = '%s\n\nIMDb: %s' % (summary, rating)
+
 	return MovieObject(
 		title = title,
 		summary = summary,
