@@ -168,6 +168,9 @@ def WatchlistMovies(id, title):
 
 	for movie in json_obj['posts']:
 
+		if not 'ID' in movie or not 'link' in movie or not 'title' in movie or not 'image' in movie:
+			continue
+
 		movie_url = movie['link']
 		movie_title = movie['title']
 		movie_thumb = movie['image']
