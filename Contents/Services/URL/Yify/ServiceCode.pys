@@ -86,7 +86,7 @@ def MediaObjectsForURL(url):
 			audio_codec = AudioCodec.AAC,
 			audio_channels = 2,
 			optimized_for_streaming = True
-		) for resolution, bitrate in [(720, 1500)]
+		) for resolution, bitrate in [(1080, 3000), (720, 1500)]
 	]
 
 ####################################################################################################
@@ -105,21 +105,26 @@ def PlayVideo(url, res):
 		Log('Something went wrong...')
 		raise Ex.MediaNotAvailable
 
+	if res == 1080:
+		width = 1920
+	else:
+		width = 1280
+
 	available_resolutions = []
 
 	for media in json_obj:
 		if 'type' in media and media['type'] == 'video/mpeg4':
-			available_resolutions.append(media['height'])
+			available_resolutions.append(media['width'])
 
 	if len(available_resolutions) < 1:
 		raise Ex.MediaNotAvailable
 
-	closest = min((abs(res - i), i) for i in available_resolutions)[1]
+	closest = min((abs(width - i), i) for i in available_resolutions)[1]
 
 	for media in json_obj:
-		if 'type' in media and media['type'] == 'video/mpeg4' and media['height'] == closest:
+		if 'type' in media and media['type'] == 'video/mpeg4' and media['width'] == closest:
 
-			#Log('\n----------\nOriginating URL: %s\nChosen resolution (vertical): %s\nSelected resolution: %sx%s\nVideo URL: %s\n----------' % (url, res, media['width'], media['height'], media['url']))
+			#Log('\n----------\nOriginating URL: %s\nChosen resolution: %s\nSelected resolution: %sx%s\nVideo URL: %s\n----------' % (url, res, media['width'], media['height'], media['url']))
 
 			return IndirectResponse(VideoClipObject, key=media['url'])
 
