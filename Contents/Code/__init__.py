@@ -31,9 +31,9 @@ def MainMenu():
 	oc.add(DirectoryObject(key = Callback(ListMovies, title='Top +250', url=TOP250_URL), title='Top +250'))
 	oc.add(DirectoryObject(key = Callback(ListGenres), title='Genres'))
 	oc.add(DirectoryObject(key = Callback(Watchlist), title='Watchlist'))
+	oc.add(SearchDirectoryObject(identifier='com.plexapp.plugins.yify', title='Search', summary='Search Movies on Yify', prompt='Search for...'))
 
 	if Client.Product != 'PlexConnect':
-		oc.add(SearchDirectoryObject(identifier='com.plexapp.plugins.yify', title='Search', summary='Search Movies on Yify', prompt='Search for...'))
 		oc.add(PrefsObject(title='Preferences'))
 
 	return oc
