@@ -16,6 +16,8 @@ def NormalizeURL(url):
 ####################################################################################################
 def MetadataObjectForURL(url):
 
+	json_obj = GetJSON(url) # Check if a movie is available to stream
+
 	html = HTML.ElementFromURL(url, headers=HTTP_HEADERS)
 
 	title = html.xpath('//meta[@property="og:title"]/@content')[0]
@@ -93,17 +95,7 @@ def MediaObjectsForURL(url):
 @indirect
 def PlayVideo(url, res):
 
-	data = HTTP.Request(url, headers=HTTP_HEADERS).content
-	video_id = RE_PLAYER.search(data)
-
-	if not video_id:
-		raise Ex.MediaNotAvailable
-
-	try:
-		json_obj = JSON.ObjectFromURL(JSON_URL % video_id.group(1), headers=HTTP_HEADERS)
-	except:
-		Log('Something went wrong...')
-		raise Ex.MediaNotAvailable
+	json_obj = GetJSON(url)
 
 	if res == 1080:
 		width = 1920
@@ -129,3 +121,20 @@ def PlayVideo(url, res):
 			return IndirectResponse(VideoClipObject, key=media['url'])
 
 	raise Ex.MediaNotAvailable
+
+####################################################################################################
+def GetJSON(url):
+
+	data = HTTP.Request(url, headers=HTTP_HEADERS).content
+	video_id = RE_PLAYER.search(data)
+
+	if not video_id:
+		Log('YIFY ERROR: Cannot find a video id')
+		raise Ex.MediaNotAvailable
+
+	try:
+		json_obj = JSON.ObjectFromURL(JSON_URL % video_id.group(1), headers=HTTP_HEADERS)
+		return json_obj
+	except:
+		Log('YIFY ERROR: This video is not available - %s' % url)
+		raise Ex.MediaNotAvailable
